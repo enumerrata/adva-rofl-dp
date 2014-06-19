@@ -1,0 +1,11 @@
+prefix=/usr/local
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: rofl
+Description: Revised OpenFlow Library (common part)
+Version: 0.3.0
+Libs: -L${libdir} -lrofl
+Cflags: -I${includedir}
+
