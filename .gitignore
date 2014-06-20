@@ -39,4 +39,7 @@ examples/queuetest/queuetest
 examples/rfc2889/rfc2889
 tools/spray/spray
 
+examples/advaswitch/*.xml
+examples/advaswitch/*.txt
+
 !.gitignore
