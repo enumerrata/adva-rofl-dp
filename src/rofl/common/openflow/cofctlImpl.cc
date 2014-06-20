@@ -4,6 +4,8 @@
 
 #include "cofctlImpl.h"
 
+#define DBG(a, b...) fprintf(stderr, "\nROFL [%s]:"a"\n", __func__, ##b);
+
 using namespace rofl;
 
 
@@ -163,7 +165,9 @@ void
 cofctlImpl::send_message(
 		cofmsg *pack)
 {
-	const uint8_t OFPT_HELLO = 0; // == OFPT10_HELLO == OFPT12_HELLO == OFPT13_HELLO
+	DBG("Send OpenFlow message: %d (bytes %d)",
+			pack->get_type(), pack->get_length());
+	const uint8_t OFPT_HELLO = 0;
 
     if (not flags.test(COFCTL_FLAG_HELLO_RCVD) && (pack->get_type() != OFPT_HELLO))
     {
@@ -173,9 +177,10 @@ cofctlImpl::send_message(
         delete pack; return;
     }
 
+
     switch (pack->get_version()) {
     case OFP10_VERSION: {
-
+//    	DBG("OFP10_VERSION");
         switch (pack->get_type()) {
         case OFPT10_HELLO:
         case OFPT10_ERROR: {
@@ -331,7 +336,6 @@ cofctlImpl::send_message(
     default:
     	throw eBadVersion();
     }
-
 	send_message_via_socket(pack);
 }
 
@@ -592,6 +596,8 @@ cofctlImpl::handle_message(
 		xid = be32toh(ofh_header->xid);
 
 		const uint8_t OFPT_HELLO = 0; // == OFPT10_HELLO == OFPT12_HELLO == OFPT13_HELLO
+		DBG("OpenFlow (%d) message received: %d (bytes %d)",
+				ofh_header->version, ofh_header->type, ofh_header->length);
 
 		if (not flags.test(COFCTL_FLAG_HELLO_RCVD) && (OFPT_HELLO != ofh_header->type)) {
 			writelog(COFCTL, WARN, "cofctl(%p)::handle_message() "
@@ -620,11 +626,13 @@ cofctlImpl::handle_message(
 				echo_reply_rcvd(dynamic_cast<cofmsg_echo_reply*>( msg ));
 			} break;
 			case OFPT10_VENDOR:	{
+//				DBG("############### VENDOR msg received");
 				msg = new cofmsg_experimenter(mem);
 				msg->validate();
 				experimenter_rcvd(dynamic_cast<cofmsg_experimenter*>( msg ));
 			} break;
 			case OFPT10_FEATURES_REQUEST:	{
+//				DBG("FEATURES_REQUEST message received");
 				msg = new cofmsg_features_request(mem);
 				msg->validate();
 				features_request_rcvd(dynamic_cast<cofmsg_features_request*>( msg ));
@@ -645,10 +653,19 @@ cofctlImpl::handle_message(
 				packet_out_rcvd(dynamic_cast<cofmsg_packet_out*>( msg ));
 			} break;
 			case OFPT10_FLOW_MOD: {
+				DBG("Packet FLOW_MOD received from controller but will be ignored.");
 				msg = new cofmsg_flow_mod(mem);
 				msg->validate();
 				flow_mod_rcvd(dynamic_cast<cofmsg_flow_mod*>( msg ));
 			} break;
+			case OFPT_CFLOW_MOD: case OFPT_CFLOW_MOD_NOX: {
+				// due to the controller implementation - does not follow implementation
+//				DBG("CFLOW_MOD message received. Parse frame to construct a new cflow_mod message.");
+				msg = new cofmsg_cflow_mod(mem);
+//				DBG("version:%d, type:%d, length:%d",
+//						msg->get_version(), msg->get_type(), msg->get_length());
+				cflow_mod_rcvd(dynamic_cast<cofmsg_cflow_mod*>(msg));
+			}break;
 			case OFPT10_PORT_MOD: {
 				msg = new cofmsg_port_mod(mem);
 				msg->validate();
@@ -697,6 +714,7 @@ cofctlImpl::handle_message(
 				stats_request_rcvd(dynamic_cast<cofmsg_stats_request*>( msg ));
 			} break;
 			case OFPT10_BARRIER_REQUEST: {
+				DBG("BARRIER REQUEST received.");
 				msg = new cofmsg_barrier_request(mem);
 				msg->validate();
 				barrier_request_rcvd(dynamic_cast<cofmsg_barrier_request*>( msg ));
@@ -1607,6 +1625,7 @@ void
 cofctlImpl::features_reply_sent(cofmsg *msg)
 {
 	uint32_t xid = msg->get_xid();
+//	DBG("cofctlImpl::features_reply_send is checking for xid (%d)", xid);
 	try {
 
 		xidstore.xid_find(xid);
@@ -1941,6 +1960,32 @@ cofctlImpl::flow_mod_rcvd(cofmsg_flow_mod *msg)
 	}
 }
 
+
+
+void
+cofctlImpl::cflow_mod_rcvd(cofmsg_cflow_mod *msg)
+{
+	try {
+		xidstore.xid_add(this, msg->get_xid(), 0);
+
+	} catch (eXidStoreXidBusy& e) {
+		WRITELOG(COFCTL, ERROR, "cofctl(%p)::features_request_rcvd() retransmission", this);
+	}
+
+	// OCS for debugging
+//	char c = 'O';
+//	if (msg->get_command() == 0) c='A';
+//	if (msg->get_command() == 3) c='X';
+//	DBG("|| [cofctlImpl] length: %d, command code: %c",
+//			msg->get_length(), c);
+//	DBG("wildcards:%d, num_components:%d",
+//			ntohs(msg->get_wildcards()), ntohs(msg->get_num_components()));
+//	DBG("wildcards:%d, num_components:%d",
+//			msg->get_wildcards(), msg->get_num_components());
+
+
+	rofbase->handle_cflow_mod(this, msg);
+}
 
 
 void
@@ -2571,6 +2616,12 @@ void
 cofctlImpl::experimenter_rcvd(cofmsg_experimenter *msg)
 {
 	switch (msg->get_experimenter_id()) {
+	case ADVA_ROADM_FS:
+	{
+		DBG("ADVA vendor message detected. Will call ethswitch handler.");
+		rofbase->handle_experimenter_message(this, msg);
+		break;
+	}
 	case OFPEXPID_ROFL:
 	{
 		switch (msg->get_experimenter_type()) {
@@ -2788,6 +2839,9 @@ void
 cofctlImpl::send_message_via_socket(
 		cofmsg *pack)
 {
+	// OCS
+//	DBG("OF.version=%d, message type=%d, length=%d.",
+//			pack->get_version(), pack->get_type(), pack->get_length());
 	if (0 == socket)
 	{
 		delete pack; return;
@@ -2804,6 +2858,7 @@ cofctlImpl::send_message_via_socket(
 
 	delete pack;
 
+//	DBG("csocket::send_packet to be called.");
 	socket->send_packet(mem);
 
 	rofbase->wakeup(); // wake-up thread in case, we've been called from another thread

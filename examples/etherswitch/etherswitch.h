@@ -1,17 +1,11 @@
 #ifndef ETHERSWITCH_H
 #define ETHERSWITCH_H 1
-#endif
 
 #include <map>
 #include "rofl/common/cmacaddr.h"
 #include "rofl/common/caddress.h"
 #include "rofl/common/crofbase.h"
 #include "rofl/common/openflow/cofdpt.h"
-#include <rofl/common/utils/c_logger.h>
-#include <fstream>
-extern "C"{
-	#include "../../adva-agent-rofl/Agent/Agent.h"
-}
 
 #include <cfib.h>
 
@@ -39,8 +33,6 @@ private:
 	unsigned int		fm_delete_all_timeout;	// periodic purging of all FLOW-MODs
 #endif
 
-	X_CorePtr core_ptr;
-
 	enum etherswitch_timer_t {
 		ETHSWITCH_TIMER_BASE 					= ((0x6271)),
 		ETHSWITCH_TIMER_FIB 					= ((ETHSWITCH_TIMER_BASE) + 1),
@@ -50,23 +42,32 @@ private:
 
 public:
 
-	ethswitch(X_CorePtr _core_ptr);
+	ethswitch();
 
-	virtual	~ethswitch();
+	virtual
+	~ethswitch();
 
-	virtual void handle_ctrl_open(rofl::cofctl *ctl);
+	virtual void
+	handle_timeout(int opaque);
 
-	virtual void handle_dpath_open(rofl::cofdpt *dpt);
+	virtual void
+	handle_dpath_open(cofdpt *dpt);
 
-	virtual void handle_features_request (cofctl *ctl, cofmsg_features_request *msg);
+	virtual void
+	handle_dpath_close(cofdpt *dpt);
 
-	virtual void handle_ctrl_close(rofl::cofctl *ctl);
+	virtual void
+	handle_packet_in(cofdpt *dpt, cofmsg_packet_in *msg);
+
+	virtual void
+	handle_flow_stats_reply(cofdpt *dpt, cofmsg_flow_stats_reply *msg);
 
 private:
 
 	void
 	request_flow_stats();
-}; // end of class ethswitch
+};
 
 }; // end of namespace
 
+#endif

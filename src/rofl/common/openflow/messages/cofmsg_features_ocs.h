@@ -2,18 +2,21 @@
  * cofmsg_features_ocs.h
  *
  *  Created on: 31.01.2014
- *      Author: Fred (UNIVBRIS)
+ *      Author: UNIVBRIS
  */
 
 #ifndef COFMSG_FEATURES_OCS_H_
 #define COFMSG_FEATURES_OCS_H_ 1
 
+#include <list>
+
 #include "cofmsg.h"
-#include "rofl/common/openflow/cofportlist.h"
 #include "rofl/common/openflow/openflow10_opt_ext.h"
+#include "rofl/common/openflow/openflow10.h"
 
 namespace rofl
 {
+
 
 
 /**
@@ -22,71 +25,47 @@ namespace rofl
 class cofmsg_features_reply_ocs :
 	public cofmsg
 {
-private:
 
-	cofportlist			ports;
-	static struct ofp_phy_cport _empty_cports;
-	struct ofp_phy_cport cports;
+public:
 
+	struct ofp10_switch_features_ocs* switch_features_ocs;
+	std::list<ofp10_port> port_list;
+	std::list<ofp_phy_cport> cport_list;
 
-	union {
-		uint8_t*						ofhu_switch_features;
-		struct ofp10_switch_features*	ofhu10_switch_features;
-		struct ofp10_switch_features_ocs*	ofhu10_switch_features_ocs;
-		struct ofp12_switch_features*	ofhu12_switch_features;
-		struct ofp13_switch_features*	ofhu13_switch_features;
-	} ofhu;
-
-#define ofh_switch_features   ofhu.ofhu_switch_features
-#define ofh10_switch_features ofhu.ofhu10_switch_features
-#define ofh10_switch_features_ocs	ofhu.ofhu10_switch_features_ocs
-#define ofh12_switch_features ofhu.ofhu12_switch_features
-#define ofh13_switch_features ofhu.ofhu13_switch_features
 
 public:
 
 
-	/**
-	 * constructor
+	/** constructor
+	 *
 	 */
 	cofmsg_features_reply_ocs(
-			uint8_t of_version = 0,
-			uint32_t xid = 0,
-			uint64_t dpid = 0,
-			uint32_t n_buffers = 0,
-			uint8_t  n_tables = 0,
-			uint8_t  n_cports = 0,
-			uint32_t capabilities = 0,
-			uint32_t of10_actions_bitmap = 0,
-			uint8_t  of13_auxiliary_id = 0,
-			cofportlist const& ports = cofportlist(),
-			struct ofp_phy_cport *cports = &_empty_cports);
+			uint8_t of_version,
+			uint32_t xid,
+			uint64_t dpid,
+			uint32_t n_buffers,
+			uint8_t  n_tables,
+			uint8_t  n_cports,
+			uint32_t capabilities,
+			uint32_t of10_actions_bitmap,
+			std::list<ofp_phy_cport> cports);
 
 
-	/**
-	 * constructor
-	 */
 	cofmsg_features_reply_ocs(
 			cofmsg_features_reply_ocs const& features_reply);
 
-	/**
-	 * constructor
-	 */
-	cofmsg_features_reply_ocs(cmemory *memarea);
 
-
-	/**
-	 * operator override
-	 */
 	cofmsg_features_reply_ocs&
 	operator= (
 			cofmsg_features_reply_ocs const& features_reply_ocs);
 
-	/**
-	 * destructor
+
+	/** destructor
+	 *
 	 */
 	virtual
 	~cofmsg_features_reply_ocs();
+
 
 	/** reset packet content
 	 *
@@ -122,16 +101,12 @@ public:
 	virtual void
 	unpack(uint8_t *buf, size_t buflen);
 
-
+#if 0
 	/** parse packet and validate it
 	 */
 	virtual void
 	validate();
-
-
-public:
-
-
+#endif
 	/**
 	 *
 	 */
@@ -213,8 +188,17 @@ public:
 	/**
 	 *
 	 */
-	cofportlist&
-	get_ports();
+	const struct
+	ofp10_switch_features_ocs * get_switch_features_ocs() const;
+
+	/**
+	 *
+	 */
+	void
+	set_switch_features_ocs(
+			struct ofp10_switch_features_ocs* switchFeaturesOcs);
+
+
 };
 
 } // end of namespace rofl

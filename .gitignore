@@ -2,6 +2,7 @@
 *.o
 *.lo
 *.la
+*.a
 *.log
 *.tmp
 *.dis
@@ -30,5 +31,12 @@ ar-lib
 
 /build-*
 /build/*
+
+examples/advaswitch/advaswitch
+examples/etherswitch/etherswitch
+examples/ofperftest/ofperftest
+examples/queuetest/queuetest
+examples/rfc2889/rfc2889
+tools/spray/spray
 
 !.gitignore

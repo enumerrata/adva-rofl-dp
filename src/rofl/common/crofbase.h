@@ -8,7 +8,7 @@
 #ifndef CROFBASE_H
 #define CROFBASE_H 1
 
-// OCS BRISTOL
+// XXX BRISTOL 
 #ifndef NDEBUG
 #define NDEBUG
 #endif
@@ -66,6 +66,8 @@
 #include "openflow/messages/cofmsg_packet_out.h"
 #include "openflow/messages/cofmsg_packet_in.h"
 #include "openflow/messages/cofmsg_flow_mod.h"
+// OCS
+#include "openflow/messages/cofmsg_cflow_mod.h"
 #include "openflow/messages/cofmsg_flow_removed.h"
 #include "openflow/messages/cofmsg_group_mod.h"
 #include "openflow/messages/cofmsg_table_mod.h"
@@ -87,7 +89,6 @@
 #include "openflow/messages/cofmsg_role.h"
 #include "openflow/messages/cofmsg_experimenter.h"
 #include "openflow/messages/cofmsg_async_config.h"
-
 
 namespace rofl
 {
@@ -1153,6 +1154,17 @@ protected:
 	handle_flow_mod(cofctl *ctl, cofmsg_flow_mod *msg) { delete msg; };
 
 
+	/**
+	 * @brief	Called once a CFLOW-MOD.message was received.
+	 *
+	 * To be overwritten by derived class. Default behavior: removes msg from heap.
+	 *
+	 * @param ctl Pointer to cofctl instance from which the FLOW-MOD.message was received
+	 * @param msg Pointer to cofmsg_flow_mod message containing the received message
+	 */
+	virtual void
+	handle_cflow_mod(cofctl *ctl, cofmsg_cflow_mod *msg) { delete msg; };
+
 
 	/**
 	 * @brief	Called once a GROUP-MOD.message was received.
@@ -1604,7 +1616,7 @@ public:
 			cofportlist const& portlist = cofportlist());
 
 	/**
-	 * @brief	Sends a CFEATURES.reply from optical switch to a controller entity.
+	 * @brief	Sends a FEATURES_ocs.reply to a controller entity.
 	 *
 	 * @param ctl pointer to cofctl instance
 	 * @param xid transaction ID from FEATURES.request
@@ -1613,9 +1625,8 @@ public:
 	 * @param n_tables number of tables available
 	 * @param n_cport number of circuit ports available
 	 * @param capabilities data path capabilities (reassembly, etc.)
-	 * @param of13_auxiliary_id auxiliary_id used in OpenFlow 1.3, ignored in other versions
 	 * @param of10_actions_bitmap bitmap of supported actions for OpenFlow 1.0, ignored in other versions
-	 * @param portlist list of cofports in this data path, ignored in OpenFlow 1.3
+	 * @param cport_list list of phy_cports in this data path
 	 */
 	virtual void
 	send_features_reply_ocs(
@@ -1626,13 +1637,9 @@ public:
 			uint8_t n_tables,
 			uint8_t n_cports,
 			uint32_t capabilities,
-			uint8_t of13_auxiliary_id = 0,
-			uint32_t of10_actions_bitmap = 0,
-			cofportlist const& portlist = cofportlist(),
-			struct ofp_phy_cport *cports = &_empty_cports
+			uint32_t of10_actions_bitmap,
+			std::list<ofp_phy_cport> cport_list
 			);
-
-
 
 	/**
 	 * @brief	Sends a GET-CONFIG.request to a data path element.

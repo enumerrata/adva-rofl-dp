@@ -4,6 +4,8 @@
 
 #include "cofmsg.h"
 
+#define DBG(a, b...) fprintf(stderr, "ROFL [%s]:"a"\n", __func__, ##b);
+
 using namespace rofl;
 
 

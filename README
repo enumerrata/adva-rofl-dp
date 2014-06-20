@@ -2,7 +2,7 @@
 What it is
 ==========
 
-An OpenFlow agent that adds openflow control to ADVA FSP 3000 ROADM device. The agent has been implemented using ROFL library (https://github.com/bisdn/rofl-core). 
+The Revised OpenFlow Library (ROFL) helps you adding OpenFlow support to your software to build control applications, controller frameworks and/or data path elements.
 
 Requirements
 ============
@@ -18,12 +18,13 @@ How to build
 Install the dependencies and run:
 
 sh# ./autogen.sh
-sh# ./configure
+sh# cd build
+sh# ../configure
 sh# make
 
 Optionally you can 'make check' for consistency checks.
 
-Optional ./configure parameters
+Optional ../configure parameters
 ================================
 
 --enable-debug: Compile with debug symbols (-g) and debug output (warning, it may affect performance).
@@ -45,8 +46,6 @@ https://www.codebasin.net/redmine/projects/rofl-core/wiki
 
 Authorship
 ==========
-
-Tasos Vlachogiannis <tasos4q (at) gmail.com>
 
 (c) Copyright BISDN GmbH 2013
 

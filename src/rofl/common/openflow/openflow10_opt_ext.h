@@ -39,9 +39,9 @@ struct ofp_phy_cport {
     uint64_t peer_datapath_id; /* Discovered peer's datapath id */
     uint16_t num_bandwidth;	   /* Identifies number of bandwidth array elems */
     uint8_t  pad[6];           /* Align to 64 bits */
-    uint64_t bandwidth[0];	   /* Bitmap of OFPCBL_* or OFPCBT_* flags */
+    uint64_t bandwidth[1];	   /* Bitmap of OFPCBL_* or OFPCBT_* flags */
 };
-OFP_ASSERT(sizeof(struct ofp_phy_cport) == 72);
+OFP_ASSERT(sizeof(struct ofp_phy_cport) == 80);
 
 /* Description of a TDM port */
 struct ofp_tdm_port {
@@ -279,7 +279,9 @@ enum ofp_type_ocs {
     OFPT_QUEUE_GET_CONFIG_REPLY,     /* Controller/switch message */
 
     /* Messages for circuit switched ports. */
+    OFPT_CFLOW_MOD_NOX  = 22,		/* Hack for NOX controller  */
     OFPT_CFLOW_MOD		= 0xff,		/* Controller/switch message */
+    OFPT_CPORT_STATUS_NOX = 23,		/* Hack for NOX controller  */
     OFPT_CPORT_STATUS	= 0xfe		/* Async message */
 };
 
@@ -398,7 +400,7 @@ struct ofp_cport_status {
 	uint8_t pad[7];				/* Align to 64 bits */
 	struct ofp_phy_cport desc;	/* Circuit port description */
 };
-OFP_ASSERT(sizeof(struct ofp_cport_status) == 88);
+OFP_ASSERT(sizeof(struct ofp_cport_status) == 96);
 
 /* What changed about the physical port */
 enum ofp_port_reason_ocs {
@@ -424,5 +426,46 @@ enum ofp_port_state {
 	OFPPS_STP_BLOCK		= 3 << 8, /* Not part of spanning tree. */
 	OFPPS_STP_MASK		= 3 << 8 /* Bit mask for OFPPS_STP_* values. */
 };
+
+enum ooe_vendor_id {
+	ADVA_ROADM_FS	= 0x41445641	/* id for ADVA specific vendor messages */
+};
+
+enum ooe_type {
+	OOE_SWITCH_CONSTRAINTS_REQUEST,		/* switching constraints message */
+	OOE_SWITCH_CONSTRAINTS_REPLY,		/* switching constraints message */
+	OOE_POWER_EQ_REQUEST,			/* power equalization */
+	OOE_POWER_EQ_REPLY				/* power equalization */
+};
+
+/** Vendor messages structs - ADVA specific */
+struct ooe_header {
+    /** Usual OpenFlow header **/
+    struct ofp_header   header;
+    /** OOE_VENDOR_ID **/
+    uint32_t            vendor;
+    /** one of the 'ooe_type' for different vendor messages **/
+    uint32_t            type;
+    /** payload **/
+    uint8_t             data[0];
+};
+OFP_ASSERT(sizeof(struct ooe_header) == 16);
+
+/** power equalization request (note it is unidirectional!)**/
+struct ooe_power_eq {
+    struct ooe_header header;
+    /** port number of the starting port **/
+    uint16_t    in_port;
+    /** port number of the terminating port **/
+    uint16_t    out_port;
+    /** frequency in GHz **/
+    uint32_t    freq;
+    /** result of power equalization, only valid for notification **/
+    uint8_t     result;
+    uint8_t     pad[3];
+};
+OFP_ASSERT(sizeof(struct ooe_power_eq) == 28);
+
+
 
 #endif /* _OPENFLOW_OPENFLOW10_OPT_EXT_H */

@@ -4,6 +4,8 @@
 
 #include "csocket.h"
 
+#define DBG(a, b...) fprintf(stderr, "ROFL [%s]:"a"\n", __func__, ##b);
+
 using namespace rofl;
 
 std::set<csocket*> csocket::csock_list;
@@ -112,10 +114,13 @@ csocket::handle_revent(int fd)
 void
 csocket::handle_wevent(int fd)
 {
+//	DBG(" #################### Start handling WRITE event with fd=%d", fd);
+//	DBG(" ############## remote address %s", raddr.c_str());
 	WRITELOG(CSOCKET, DBG, "csocket(%p)::handle_wevent()", this);
 
 	if (sockflags[CONNECT_PENDING])
 	{
+//		DBG("if CONNECT PENDING");
 		int rc;
 		int optval = 0;
 		int optlen = sizeof(optval);
@@ -127,6 +132,7 @@ csocket::handle_wevent(int fd)
 		case 0:
 		//case EISCONN:
 			{
+//				DBG("SWITCH <optval>: case 0");
 				WRITELOG(CSOCKET, DBG, "csocket(%p)::handle_wevent() "
 						"connection established to %s",
 						this, raddr.addr_c_str());
@@ -142,6 +148,7 @@ csocket::handle_wevent(int fd)
 			break;
 		case EINPROGRESS:
 			{
+				DBG("SWITCH <optval>: case EINPROGRESS");
 				WRITELOG(CSOCKET, DBG, "csocket(%p)::handle_wevent() "
 						"connection establishment to %s is in progress",
 						this, raddr.addr_c_str());
@@ -151,6 +158,7 @@ csocket::handle_wevent(int fd)
 			break;
 		case ECONNREFUSED:
 			{
+				DBG("SWITCH <optval>: case ECONNREFUSED");
 				WRITELOG(CSOCKET, DBG, "csocket(%p)::handle_wevent() "
 						"connection to %s failed",
 						this, raddr.addr_c_str());
@@ -161,6 +169,7 @@ csocket::handle_wevent(int fd)
 			break;
 		default:
 			{
+				DBG("SWITCH <optval>: case DEFAULT - connection failed");
 				WRITELOG(CSOCKET, DBG, "csocket(%p)::handle_wevent() "
 						"connection establishment to %s => an error occured, errno: %d",
 						this, raddr.addr_c_str(), optval);
@@ -172,6 +181,7 @@ csocket::handle_wevent(int fd)
 	}
 	else
 	{
+//		DBG("else dequeue_packet()");
 		dequeue_packet();
 	}
 }
@@ -391,6 +401,7 @@ csocket::cconnect(
 void
 csocket::cclose()
 {
+	DBG(" .::csocket::. closing socket.")
 	RwLock lock(&pout_squeue_lock, RwLock::RWLOCK_WRITE);
 
 	WRITELOG(CSOCKET, DBG, "csocket(%p)::cclose()", this);
@@ -433,6 +444,9 @@ csocket::cclose()
 void
 csocket::send_packet(cmemory* pack, caddress const& dest)
 {
+	// OCS
+//	DBG("Printing message to be sent to the controller. (muted)");
+//	DBG("csocket(%p)::send_packet() pack: %s", this, pack->c_str());
 	WRITELOG(CSOCKET, DBG, "csocket(%p)::send_packet() pack: %s", this, pack->c_str());
 	if (not sockflags.test(CONNECTED) && not sockflags.test(RAW_SOCKET))
 	{
@@ -444,6 +458,7 @@ csocket::send_packet(cmemory* pack, caddress const& dest)
 	RwLock lock(&pout_squeue_lock, RwLock::RWLOCK_WRITE);
 
 	pout_squeue.push_back(pout_entry_t(pack, dest));
+//	DBG("Will now register the fd for writing-sending to controller");
 	register_filedesc_w(sd);
 }
 
@@ -470,6 +485,7 @@ csocket::dequeue_packet() throw (eSocketSendFailed, eSocketShortSend)
 				WRITELOG(CSOCKET, DBG, "csocket(%p)::dequeue_packet() "
 						"errno=%d (%s) pack: %s",
 						this, errno, strerror(errno), entry.mem->c_str());
+				DBG("pqow code:%d, error:%s, pack:%s", errno, strerror(errno), entry.mem->c_str());
 
 				switch (errno) {
 				case EAGAIN:
@@ -492,6 +508,7 @@ csocket::dequeue_packet() throw (eSocketSendFailed, eSocketShortSend)
 			}
 			else if ((rc < (int)entry.mem->memlen()))
 			{
+				DBG("pqow sent:%d, pack:%d", rc, (int)entry.mem->memlen());
 				throw eSocketShortSend();
 			}
 
@@ -502,15 +519,17 @@ csocket::dequeue_packet() throw (eSocketSendFailed, eSocketShortSend)
 
 			delete entry.mem;
 		}
-
+//		DBG("OF message send_to the socket (system call) returned %d bytes", rc);
 		if (pout_squeue.empty())
 		{
+//			DBG("Will now deregister file descriptor: %d", sd);
 			deregister_filedesc_w(sd);
 		}
 
 		return;
 	} // unlocks pout_squeue_lock
 out:
+	//DBG("pqow out: tag. close and handle_closed(%d).", sd);
 	cclose(); // clears also pout_squeue
 	handle_closed(sd);
 }

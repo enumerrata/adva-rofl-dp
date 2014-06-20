@@ -5,6 +5,8 @@
 #include "ciosrv.h"
 #include "csocket.h"
 
+#define DBG(a, b...) fprintf(stderr, "ROFL [%s]: "a"\n", ##b);
+
 using namespace rofl;
 
 #if 0
@@ -327,6 +329,8 @@ ciosrv::register_filedesc_w(int fd)
 	RwLock lock(&ciosrv::iothread_lock, RwLock::RWLOCK_WRITE);
 
 	WRITELOG(CIOSRV, DBG, "ciosrv(%p)::register_filedesc_w() fd=%d", this, fd);
+//	DBG("ciosrv(%p)::register_filedesc_w() fd=%d", this, fd);
+
 	threads[tid]->wfds[fd] = this;
 }
 
@@ -337,6 +341,7 @@ ciosrv::deregister_filedesc_w(int fd)
 
 	WRITELOG(CIOSRV, DBG, "ciosrv(%p)::deregister_filedesc_w() fd=%d", this, fd);
 	threads[tid]->wfds.erase(fd);
+//	DBG("pqow Erasing file descriptor from the array of threads.");
 }
 
 void
@@ -723,6 +728,7 @@ next_element:
 		}
 		if (FD_ISSET(fd, exceptfds))
 		{
+			DBG("Handle READ fd using handle_xevent method.");
 			WRITELOG(CIOSRV, DBG, "ciosrv::handle_rfds(): handle r/x events excp-fds:  %d", fd);
 			cio->handle_xevent(fd);
 		}
@@ -771,6 +777,7 @@ next_element:
 		if (FD_ISSET(fd, exceptfds))
 		{
 			WRITELOG(CIOSRV, DBG, "ciosrv::handle_wfds(): handle w/x events excp-fds:  %d", fd);
+			DBG("Handle WRITE fd using handle_xevent");
 			cio->handle_xevent(fd);
 		}
 	}

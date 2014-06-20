@@ -9,6 +9,8 @@ void librofl_is_present(void) {};
 
 #include "crofbase.h"
 
+#define DBG(a, b...) fprintf(stderr, "ROFL [%s]:"a"\n", __func__, ##b);
+
 using namespace rofl;
 
 /* static */ std::set<crofbase*> crofbase::rofbases;
@@ -148,6 +150,7 @@ crofbase::handle_ctl_open(
 		cofctl *ctl)
 {
 	handle_ctrl_open(ctl);
+	//std::cout<<"called"<<std::endl;
 }
 
 
@@ -621,6 +624,11 @@ crofbase::ctl_find(cofctl *ctl) throw (eRofBaseNotFound)
 }
 
 
+
+
+
+
+
 /*
 * HELLO messages
 */
@@ -832,11 +840,15 @@ crofbase::send_features_reply(
 					of13_auxiliary_id,
 					portlist);
 
-	reply->pack(); // adjust fields, e.g. length in ofp_header
+	reply->pack();
 
 	ctl_find(ctl)->send_message(reply);
 }
 
+
+/**
+ * Send features reply for circuit switch
+ * */
 void
 crofbase::send_features_reply_ocs(
 		cofctl *ctl,
@@ -846,33 +858,42 @@ crofbase::send_features_reply_ocs(
 		uint8_t n_tables,
 		uint8_t n_cports,
 		uint32_t capabilities,
-		uint8_t of13_auxiliary_id,
 		uint32_t of10_actions_bitmap,
-		cofportlist const& portlist,
-		struct ofp_phy_cport *cports
-		)
+		std::list<ofp_phy_cport> cport_list)
 {
-	WRITELOG(CROFBASE, DBG, "crofbase(%p)::send_features_reply()", this);
+	WRITELOG(CROFBASE, DBG, "crofbase(%p)::send_features_reply_ocs()", this);
 
-	cofmsg_features_reply_ocs *reply=new cofmsg_features_reply_ocs(
-					ctl->get_version(),
-					xid,
-					dpid,
-					n_buffers,
-					n_tables,
-					n_cports,
-					capabilities,
-					of10_actions_bitmap,
-					of13_auxiliary_id,
-					portlist,
-					cports);
+//	DBG("Print DPID received:%" PRIu64, dpid);
+	cofmsg_features_reply_ocs* reply = new cofmsg_features_reply_ocs(
+			ctl->get_version()
+			,xid
+			,dpid
+			,n_buffers
+			,n_tables
+			,n_cports
+			,capabilities
+			,of10_actions_bitmap
+			,cport_list
+			);
 
+//	DBG("version:%d, type:%d, length:%d, xid:%d",
+//			reply->get_version(), reply->get_type(), reply->get_length(), reply->get_xid());
+	// OCS debugging only
+#if 0
+	if (reply->get_n_cports() > 0) {
+		DBG("Reading port # and names in crofbase");
+		std::list<ofp_phy_cport>::iterator it = reply->cport_list.begin();
+		while (it != reply->cport_list.end()) {
+			DBG("%d::%s", it->port_no, it->name);
+			it++;
+		}
+	}
+#endif
 
-	reply->pack(); // adjust fields, e.g. length in ofp_header
-
+//	reply->pack(); // adjust fields, e.g. length in ofp_header
+//	DBG("Will send a CFeatReply to the controller: Calling cofctlImpl::send_message");
 	ctl_find(ctl)->send_message(reply);
 }
-
 
 
 

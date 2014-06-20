@@ -56,6 +56,10 @@ extern "C" {
 
 #include "rofl/common/openflow/cofctl.h"
 
+// OCS
+#include "../openflow/messages/cofmsg_cflow_mod.h"
+#include "../openflow/openflow10_opt_ext.h"
+
 namespace rofl
 {
 
@@ -123,7 +127,9 @@ private: // data structures
 
 
 #define RECONNECT_START_TIMEOUT 5							// start reconnect timeout (default 1s)
-#define DEFAULT_RPC_ECHO_INTERVAL 30 /* seconds */
+// OCS NOX controller time out is 15 seconds
+#define DEFAULT_RPC_ECHO_INTERVAL 12 /* seconds */
+//#define DEFAULT_RPC_ECHO_INTERVAL 30 /* seconds */
 #define DEFAULT_ECHO_TIMEOUT 8 /* seconds */
 #define RECONNECT_MAX_TIMEOUT 60							// max reconnect timeout (default 120s)
 
@@ -324,6 +330,12 @@ private:
 	void
 	features_reply_sent(cofmsg *pack);
 
+	/** Sending features reply message to the controller for
+	 *  a circuit datapath
+	 */
+//	void
+//	features_reply_ocs_sent(cofmsg_features_reply_ocs *pack);
+
 	/**
 	 *
 	 */
@@ -351,6 +363,12 @@ private:
 	 */
 	void
 	flow_mod_rcvd(cofmsg_flow_mod *pack);
+
+	/** handle incoming CFLOW-MOD messages
+	 */
+	void
+	cflow_mod_rcvd(cofmsg_cflow_mod *pack);
+
 
 	/** handle incoming GROUP-MOD messages
 	 */

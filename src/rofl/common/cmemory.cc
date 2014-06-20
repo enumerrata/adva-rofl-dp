@@ -359,13 +359,14 @@ cmemory::mallocate(
 	{
 		mfree();
 	}
-	data.second = len;
+	data.second = (size_t) len;
 
-
+	//std::cerr << "Will now call calloc. data.second=" << data.second << std::endl;
 	if ((data.first = (uint8_t*)calloc(1, data.second)) == 0)
 	{
 		throw eMemAllocFailed();
 	}
+	//std::cerr << "calloc() finished allocating memory" << std::endl;
 
 	memset(data.first, 0, data.second);
 }
