@@ -1,5 +1,5 @@
-#ifndef ADVASWITCH_H
-#define ADVASWITCH_H 1
+#ifndef POLATISSWITCH_H
+#define POLATISSWITCH_H 1
 #endif
 
 #include <map>
@@ -10,30 +10,35 @@
 #include <rofl/common/utils/c_logger.h>
 #include <fstream>
 extern "C"{
-	#include "../../adva-agent-rofl/Agent/Agent.h"
-	#include "../../adva-agent-rofl/SnmpAccess/List.h"
+	#include "../../agent-hsl/Agent/Agent.h"
+	#include "../../agent-hsl/Agent/TL1_conn.h"
 }
 
 #include <cfib.h>
 
 using namespace rofl;
 
-namespace advaswitch
+namespace polatisswitch
 {
 
-class advaroadm :
+class polatissw :
 		public crofbase
 {
 private:
 
 	X_CorePtr core_ptr;
 
+	struct crossc_table {
+		ofp_phy_cport in_port[0];
+		ofp_phy_cport out_port[0];
+	};
+
 public:
 
-	advaroadm(X_CorePtr _core_ptr);
+	polatissw(X_CorePtr _core_ptr);
 
 	virtual
-	~advaroadm();
+	~polatissw();
 
 	virtual void
 	handle_ctrl_open(rofl::cofctl *ctl);
@@ -45,19 +50,13 @@ public:
 	handle_features_request (cofctl *ctl, cofmsg_features_request *msg);
 
 	void
+	handle_barrier_request(cofctl *ctl, cofmsg_barrier_request *msg);
+
+	void
 	handle_cflow_mod(cofctl *ctl, cofmsg_cflow_mod *msg); // { delete msg; };
 
 	void
 	handle_experimenter_message(cofctl *ctl, cofmsg_experimenter *msg);
-
-	void
-	handle_switching_constrains_req(cofctl *ctl, cofmsg_experimenter *msg);
-
-	void
-	handle_power_equalization_req (cofctl *ctl, cofmsg_experimenter *msg);
-
-	void
-	handle_mgmt_info_req(cofctl *ctl, cofmsg_experimenter *msg);
 
 	virtual void
 	handle_ctrl_close(rofl::cofctl *ctl);

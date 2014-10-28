@@ -18,8 +18,7 @@ How to build
 Install the dependencies and run:
 
 sh# ./autogen.sh
-sh# cd build
-sh# ../configure
+sh# ./configure
 sh# make
 
 Optionally you can 'make check' for consistency checks.

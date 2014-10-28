@@ -32,7 +32,7 @@ ar-lib
 /build-*
 /build/*
 
-examples/advaswitch/advaswitch
+examples/polatisswitch/polatisswitch
 examples/etherswitch/etherswitch
 examples/ofperftest/ofperftest
 examples/queuetest/queuetest
