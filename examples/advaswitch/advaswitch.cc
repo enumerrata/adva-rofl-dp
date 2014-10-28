@@ -74,7 +74,7 @@ advaroadm::handle_features_request(cofctl *ctl,
 	delete msg;
 }
 
-// OCS TODO
+// OCS
 void
 advaroadm::handle_cflow_mod(cofctl *ctl, cofmsg_cflow_mod *msg)
 {
@@ -255,6 +255,12 @@ advaroadm::handle_experimenter_message(cofctl *ctl, cofmsg_experimenter *msg)
 			handle_power_equalization_req(ctl, msg);
 			break;
 		}
+		case OOE_MGMT_INFO_REQUEST:
+		{
+			DBG("OOE_MGMT_INFO_REQUEST message detected");
+			handle_mgmt_info_req(ctl, msg);
+			break;
+		}
 		default:
 		{
 			DBG("NOT_VALID experimenter message", ntohl(type));
@@ -274,6 +280,66 @@ advaroadm::handle_switching_constrains_req(cofctl *ctl, cofmsg_experimenter *msg
 	/* Not supported - sending error message */
 	send_error_message(ctl, msg->get_xid(), OFPET_BAD_REQUEST, OFPBRC_BAD_EXPERIMENTER,
 								(unsigned char*)msg->soframe(), 96);
+}
+
+// OCS ADVA
+void
+advaroadm::handle_mgmt_info_req(cofctl *ctl, cofmsg_experimenter *msg)
+{
+	struct ooe_mgmt_info* mgm_info_ptr;
+	uint8_t		*buffer;
+	uint8_t 	*data;
+	buffer = (uint8_t *) malloc(sizeof(struct ooe_mgmt_info));
+	mgm_info_ptr = (ooe_mgmt_info*)buffer;
+
+	mgm_info_ptr->header.header.version = OFP10_VERSION;
+	mgm_info_ptr->header.header.xid = msg->get_xid();
+	mgm_info_ptr->header.header.type = OFPT10_VENDOR;
+
+	mgm_info_ptr->header.vendor = ADVA_ROADM_FS;
+	mgm_info_ptr->header.type = OOE_MGMT_INFO_REPLY;
+
+	mgm_info_ptr->dpid = htobe64(core_ptr->SysIP);
+
+	pthread_mutex_lock(&core_mutex_init);
+	char* temp;
+	uint32_t addr;
+	temp = core_ptr->SnmpConf.Host;
+	inet_aton(temp, (struct in_addr*)&addr);
+
+	mgm_info_ptr->snmp_ip = htonl(addr);
+
+	mgm_info_ptr->snmp_port = 161;	// TODO parse from device
+
+	mgm_info_ptr->num = strlen(core_ptr->SnmpConf.Community);
+	memcpy(mgm_info_ptr->snmp_community, core_ptr->SnmpConf.Community,
+			mgm_info_ptr->num);
+	uint16_t msg_length = sizeof(struct ooe_mgmt_info) + mgm_info_ptr->num;
+	mgm_info_ptr->header.header.length = htons(msg_length);
+	pthread_mutex_unlock(&core_mutex_init);
+	DBG("unlock MUTEX");
+
+	data = (uint8_t *)&mgm_info_ptr->header.type;
+	size_t datalen = 22 + mgm_info_ptr->num;
+
+	cofmsg_experimenter *reply_msg = new cofmsg_experimenter(
+			OFP10_VERSION,
+			msg->get_xid(),
+			ADVA_ROADM_FS,
+			OOE_MGMT_INFO_REPLY,
+			data,
+			datalen
+		);
+	DBG("Print experimenter message created. %s", reply_msg->c_str());
+
+	DBG("Sending MANAGEMENT_INFO reply to the controller.");
+	ctl_find(ctl)->send_message(reply_msg);
+
+	// TODO
+//	X_Core_Process_Mgmt_Info_Request(core_ptr);
+//	send_error_message(ctl, msg->get_xid(), OFPET_BAD_REQUEST, OFPBRC_BAD_EXPERIMENTER,
+//									(unsigned char*)msg->soframe(), 96);
+	DBG("Send OF message and will now return from method.")
 }
 
 

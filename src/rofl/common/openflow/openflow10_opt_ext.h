@@ -427,15 +427,25 @@ enum ofp_port_state {
 	OFPPS_STP_MASK		= 3 << 8 /* Bit mask for OFPPS_STP_* values. */
 };
 
+/*
+ * experimenter id
+ * */
 enum ooe_vendor_id {
 	ADVA_ROADM_FS	= 0x41445641	/* id for ADVA specific vendor messages */
 };
 
+/**
+ * experimenter type - defined by the experimenter
+ * */
 enum ooe_type {
 	OOE_SWITCH_CONSTRAINTS_REQUEST,		/* switching constraints message */
 	OOE_SWITCH_CONSTRAINTS_REPLY,		/* switching constraints message */
+
 	OOE_POWER_EQ_REQUEST,			/* power equalization */
-	OOE_POWER_EQ_REPLY				/* power equalization */
+	OOE_POWER_EQ_REPLY,				/* power equalization */
+
+	OOE_MGMT_INFO_REQUEST,			/* management info msg */
+	OOE_MGMT_INFO_REPLY				/* management info msg */
 };
 
 /** Vendor messages structs - ADVA specific */
@@ -466,6 +476,22 @@ struct ooe_power_eq {
 };
 OFP_ASSERT(sizeof(struct ooe_power_eq) == 28);
 
+/* ADVA management info extensions */
+struct ooe_mgmt_info {
+	struct ooe_header 	header;		// vendor message header
 
+	uint64_t			dpid;		// datapath id
+
+	uint32_t			snmp_ip;	// address of SNMP agent
+
+	uint32_t			snmp_port;	// port no of SNMP agent
+
+	uint8_t				pad;		// pad
+
+	uint8_t				num;		// number of bytes in 'community' array
+
+	uint8_t				snmp_community[0];
+};
+//OFP_ASSERT(sizeof(struct ooe_mgmt_info) == 26);
 
 #endif /* _OPENFLOW_OPENFLOW10_OPT_EXT_H */

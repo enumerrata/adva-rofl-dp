@@ -2618,7 +2618,7 @@ cofctlImpl::experimenter_rcvd(cofmsg_experimenter *msg)
 	switch (msg->get_experimenter_id()) {
 	case ADVA_ROADM_FS:
 	{
-		DBG("ADVA vendor message detected. Will call ethswitch handler.");
+		DBG("ADVA vendor message detected. Will call advaswitch handler.");
 		rofbase->handle_experimenter_message(this, msg);
 		break;
 	}

@@ -53,11 +53,11 @@ public:
 	void
 	handle_switching_constrains_req(cofctl *ctl, cofmsg_experimenter *msg);
 
-//	void
-//	handle_mgmt_info_request(cofctl *ctl, cofmsg_experimenter *msg);
-
 	void
 	handle_power_equalization_req (cofctl *ctl, cofmsg_experimenter *msg);
+
+	void
+	handle_mgmt_info_req(cofctl *ctl, cofmsg_experimenter *msg);
 
 	virtual void
 	handle_ctrl_close(rofl::cofctl *ctl);

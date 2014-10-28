@@ -2,7 +2,7 @@
 
 using namespace rofl;
 
-
+#define DBG(a, b...) fprintf(stderr, "ROFL [%s]:"a"\n", __func__, ##b);
 
 cofmsg_experimenter::cofmsg_experimenter(
 		uint8_t of_version,
